@@ -10,6 +10,7 @@ from rest_framework import status
 
 class GcompanyView(APIView):
     def get(self,request):
+        print("Gcompany get으로 들어옴")
         print("들어왔습니다.")
         name = request.data.get('name')
         print(name)
@@ -25,6 +26,7 @@ class GcompanyView(APIView):
         return Response(serializer_data)
     
     def post(self, request, format=None):
+        print("Gcompany post으로 들어옴")
         serializer = GcompanySerializer(data=request.data)
         
         if serializer.is_valid():
