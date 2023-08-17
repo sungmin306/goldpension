@@ -11,23 +11,30 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
+import json
+import sys
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+CONFIG_BASE_DIR = Path(__file__).resolve().parent
 
+SECRET_BASE_FILE = os.path.join(CONFIG_BASE_DIR, 'secrets/secrets.json')
+secrets = json.loads(open(SECRET_BASE_FILE).read())
+for key, value in secrets.items():
+    setattr(sys.modules[__name__], key, value)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-3!=c47jr92a#lnv79lhcs8@fj^&^p6*ofv3dic&bh8-^j_kx1v'
+#SECRET_KEY = 'django-insecure-3!=c47jr92a#lnv79lhcs8@fj^&^p6*ofv3dic&bh8-^j_kx1v'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -38,13 +45,94 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-
-    'rest_framework',
+    #myapp
     'company',
     'guarantee',
+    'oauth',
+    'user',
+    #라이브러리 
+    'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
+    'drf_yasg',
+    'corsheaders'
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [  # 기본 Permission 설정
+         'rest_framework.permissions.AllowAny',  # 모든 계정 액세스 허용
+        #'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (  # Authenticationt 설정
+        # 'rest_framework.authentication.SessionAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        # 'rest_framework.authentication.TokenAuthentication',
+        # 'rest_framework.authentication.BasicAuthentication',
+    ),
+    'DEFAULT_RENDERER_CLASSES': [  # api 결과 전달 방식
+        'rest_framework.renderers.JSONRenderer',  # json 방식
+    ],
+    'DEFAULT_PARSER_CLASSES': [  # 요청 받을 때 body 형태
+        'rest_framework.parsers.JSONParser',
+        # 'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser',
+    ],
+    'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S',  # serializer datetime format
+}
+
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_PASSWORD_REQUIRED = True
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+
+REST_USE_JWT = False
+ACCOUNT_LOGOUT_ON_GET = False
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=14),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+
+    'ALGORITHM': 'HS512',
+    'SIGNING_KEY': '',
+
+    'AUTH_HEADER_TYPES': ('Bearer',),  # 인증 헤더 유형
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',  # 인증 헤더 명칭
+    'USER_ID_FIELD': 'social_id',  # 사용자 식별을 위한 토큰에 포함할 사용자 모델의 DB 필드명
+    'USER_ID_CLAIM': 'social_id',  # 사용자 식별을 저장하는 데 사용할 생성된 토큰의 클레임
+
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),  # 토큰 유형 지정 클래스
+    'TOKEN_TYPE_CLAIM': 'token_type',  # 토큰 유형 저장 클레임 명칭
+
+    'JTI_CLAIM': 'jti',
+}
+
+
+# AUTH_USER_MODEL = 'user.UserModel'
+AUTHENTICATION_BACKENDS = (
+    'user.lib.backends.SettingsBackend',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization'
+        }
+    },
+    
+    'LOGIN_URL': 'user:login',
+    'LOGOUT_URL': 'user:logout',
+    'USE_SESSION_AUTH': False,
+}
+
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',   # cors 추가  
+
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -54,7 +142,14 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+CORS_ORIGIN_WHITELIST = [
+    'https://localhost:3000',
+]
+
+CORS_ORIGIN_ALLOW_ALL = True
+
 ROOT_URLCONF = 'goldpension.urls'
+
 
 TEMPLATES = [
     {
@@ -78,10 +173,21 @@ WSGI_APPLICATION = 'goldpension.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'EMGIME' : 'django.db.backends.mysql',
+        'NAME' : 'gold',
+        'USER' : 'root',
+        'PASSWORD' : 'whtjdals0306!',
+        'HOST' : 'localhost',
+        'PORT' : '3306'
     }
 }
 
@@ -108,12 +214,10 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
+LANGUAGE_CODE = 'ko-kr'
+TIME_ZONE = 'Asia/Seoul'
 USE_I18N = True
-
+USE_L10N = True
 USE_TZ = True
 
 
