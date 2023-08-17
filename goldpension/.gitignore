@@ -1,0 +1,7 @@
+# venv
+myvenv/
+
+# temp
+.vscode
+__pycache__/
+db.sqlite3
