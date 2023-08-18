@@ -37,7 +37,7 @@ class UserRoleModel(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'user_role'
+        db_table = 'users_role'
         app_label = 'users'
         verbose_name_plural = '사용자 권한'
 
@@ -55,7 +55,7 @@ class UserModel(AbstractBaseUser):
 
     role = models.ForeignKey(
         UserRoleModel, 
-        related_name='user', 
+        related_name='users', 
         db_column='role_id', 
         on_delete=models.PROTECT, 
         verbose_name='사용자 권한'
